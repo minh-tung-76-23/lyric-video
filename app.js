@@ -16,10 +16,27 @@
     show = s.plain === false ? (w) => w : C.plain;
     document.title = s.title || 'Lyrics';
     if (!EMBED) audio.src = audioUrl || s.audio || 'music/song.mp3';
+    applyAspect(qs.get('ratio') || s.aspect || '4:3');
     buildClips(s.clips || []);
     curLine = -2; curClip = -2;
     render(now());
   }
+
+  // ---------- Khung hình: "4:3" | "16:9" | "9:16" | "full" (phủ kín màn hình) ----------
+  const stage = $('stage');
+  let aspectMode = '4:3';
+  function applyAspect(a) {
+    aspectMode = String(a).trim().toLowerCase();
+    const m = aspectMode.match(/^(\d+(?:\.\d+)?)\s*[:/x]\s*(\d+(?:\.\d+)?)$/);
+    stage.classList.toggle('full', !m);
+    if (m) stage.style.setProperty('--ar', (+m[1] / +m[2]).toFixed(4));
+    updatePortrait();
+  }
+  function updatePortrait() {
+    const r = stage.getBoundingClientRect();
+    stage.classList.toggle('portrait', r.height > r.width * 1.05);
+  }
+  addEventListener('resize', updatePortrait);
 
   // ---------- Clip / ảnh nền (cắt thẳng, không mờ dần - giống video) ----------
   function buildClips(list) {

@@ -17,6 +17,16 @@
   $('plain').checked = song.plain !== false;
   $('offset').value = song.offset || 0;
   $('source').value = song.source || '';
+  $('aspect').value = song.aspect || '4:3';
+  const fitPreview = () => {
+    const m = (song.aspect || '4:3').match(/^(\d+):(\d+)$/);
+    const ar = m ? +m[1] / +m[2] : 16 / 9;
+    frame.style.aspectRatio = String(ar);
+    frame.style.width = ar < 1 ? 'auto' : '100%';
+    frame.style.height = ar < 1 ? '78vh' : '';
+  };
+  fitPreview();
+  $('aspect').onchange = (e) => { song.aspect = e.target.value; fitPreview(); changed(); };
   $('clips').value = song.clips.map((c) => (typeof c === 'string' ? c : [c.src, c.at ?? '', c.from || ''].join(' ').trim())).join('\n');
 
   // Nút bỏ nháp (khi đã chép song.js mới vào thư mục)

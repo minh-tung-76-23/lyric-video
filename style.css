@@ -9,15 +9,22 @@ html, body {
 }
 body { display: flex; align-items: center; justify-content: center; }
 
-/* Khung ngang 4:3 như video, điện thoại dọc thì có viền đen trên dưới */
+/* Khung hình chỉnh trong song.js: "aspect": "4:3" | "16:9" | "9:16" | "full"
+   (hoặc thêm ?ratio=9:16 vào link). Thừa chỗ thì có viền đen. */
 #stage {
+  --ar: 1.3333;
   position: relative;
-  width: min(100vw, calc(100dvh * 4 / 3));
-  aspect-ratio: 4 / 3;
+  width: min(100vw, calc(100dvh * var(--ar)));
+  aspect-ratio: var(--ar);
   overflow: hidden;
   background: #000;
   container-type: size;
 }
+#stage.full { width: 100vw; height: 100dvh; aspect-ratio: auto; }
+
+/* khung dọc: chữ tính theo chiều ngang hẹp nên phóng to lên cho dễ đọc */
+#stage.portrait .line { transform: scale(1.45); max-width: 62cqw; }
+#stage.portrait .flash { transform: scale(1.15); }
 
 /* Nền khi chưa có clip: canvas vẽ đường đêm (scene.js), hơi nhòe như quay điện thoại */
 #bg {

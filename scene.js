@@ -35,7 +35,7 @@ window.NightScene = (() => {
       const camZ = since * K.speed + 7;
       const bob = Math.sin(since * 5.5) * H * 0.004;
       const y0 = H * (0.46 + (K.pitch || 0)) + bob;
-      const f = W * 0.8, eye = 1.6;
+      const f = Math.max(W, H * 0.75) * 0.8, eye = 1.6;   // khung dọc vẫn giữ góc nhìn như khung ngang
       const cx = W / 2 + Math.sin(since * 0.6) * W * 0.012;
       const P = (X, Y, z) => [cx + (X * f) / z, y0 + ((eye - Y) * f) / z];
       const fade = (z) => clamp(1.15 - z / (FAR * 0.75), 0, 1);
