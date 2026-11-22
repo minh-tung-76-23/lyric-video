@@ -46,6 +46,27 @@ Thêm bao nhiêu ảnh cũng được (`.jpg` `.png` `.webp`, hoặc clip `.mp4`
 
 Ảnh tự tối bớt cho chữ dễ đọc và phóng to chậm cho có chuyển động.
 
+`song.js` đã chia sẵn 25 ảnh theo từng câu: `clips/01-em.jpg` … `clips/25-em-oi.jpg` (tên file ghi luôn câu hát).
+Chỉ cần bỏ ảnh đúng tên vào `clips/` – đuôi `.jpg` `.jpeg` `.png` `.webp` đều được. Ảnh nào chưa có thì chỗ đó tự dùng nền đêm vẽ sẵn.
+
+Đoạn hoạt hình vẽ sẵn, không cần ảnh – ghi `{"scene": "tên", "at": giây}` (trong editor: `scene:tên giây`):
+
+| tên | dùng cho |
+|---|---|
+| `timelapse` | ngày–đêm quay vòng, phố lên đèn ("một ngày hai mươi tư tiếng trôi mau", "ngày đêm sớm khuya") |
+| `seasons` | bình minh → xuân hoa rơi → hạ → thu lá vàng ("rạng đông sang, xuân tan, hạ đơn lá thu vàng") |
+| `storm` | mưa xiên + sấm chớp ("dù cho lắm bão giông kéo đến") |
+| `snowforest` `dusk` `sodium` `dark` `suburb` `park` `ground` `trees` | các cảnh đường đêm |
+
+### Thay mặt nhân vật trong hoạt hình
+
+`timelapse` có 2 người chở nhau trên xe máy, `seasons` có em đứng dưới cây + anh cầm hoa trên đồi,
+`storm` có 2 người mặc áo mưa đứng dưới đèn. Muốn dùng mặt thật:
+
+- Bỏ ảnh vào `faces/anh.jpg` (anh – người lái xe / cầm hoa / áo mưa vàng) và `faces/em.jpg` (em – ngồi sau / dưới cây / áo mưa hồng).
+- Ảnh nên **cắt sát mặt, hình vuông** (vd 300×300) – trang lấy phần giữa ảnh và cắt tròn. `.png` nền trong càng đẹp.
+- Chưa có ảnh thì dùng mặt hoạt hình. Đổi đường dẫn ở dòng `"faces"` trong `song.js`.
+
 Chỉ đưa lên nhạc/clip mà bạn có quyền dùng (repo GitHub Pages công khai ai cũng tải được).
 
 ## Sửa lời / làm bài mới

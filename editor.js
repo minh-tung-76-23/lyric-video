@@ -27,7 +27,8 @@
   };
   fitPreview();
   $('aspect').onchange = (e) => { song.aspect = e.target.value; fitPreview(); changed(); };
-  $('clips').value = song.clips.map((c) => (typeof c === 'string' ? c : [c.src, c.at ?? '', c.from || ''].join(' ').trim())).join('\n');
+  $('clips').value = song.clips.map((c) => (typeof c === 'string' ? c
+    : [c.scene ? 'scene:' + c.scene : c.src, c.at ?? '', c.from || ''].join(' ').trim())).join('\n');
 
   // Nút bỏ nháp (khi đã chép song.js mới vào thư mục)
   const reset = document.createElement('button');
@@ -60,7 +61,12 @@
   $('clips').oninput = (e) => {
     song.clips = e.target.value.split('\n').map((l) => l.trim().split(/\s+/)).filter((p) => p[0])
       // không ghi giây -> để trống, trang tự chia đều
-      .map(([src, at, from]) => ({ src, ...(at != null && !isNaN(parseFloat(at)) ? { at: parseFloat(at) } : {}), ...(from ? { from: parseFloat(from) || 0 } : {}) }));
+      // "scene:timelapse 5.15" = đoạn hoạt hình vẽ sẵn (timelapse | seasons | storm | snowforest ...)
+      .map(([src, at, from]) => ({
+        ...(src.startsWith('scene:') ? { scene: src.slice(6) } : { src }),
+        ...(at != null && !isNaN(parseFloat(at)) ? { at: parseFloat(at) } : {}),
+        ...(from ? { from: parseFloat(from) || 0 } : {}),
+      }));
     changed();
   };
   $('file').onchange = (e) => {

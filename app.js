@@ -17,6 +17,7 @@
     document.title = s.title || 'Lyrics';
     if (!EMBED) audio.src = audioUrl || s.audio || 'music/song.mp3';
     applyAspect(qs.get('ratio') || s.aspect || '4:3');
+    scene?.setFaces(s.faces);   // ảnh mặt cho nhân vật trong hoạt hình
     buildClips(s.clips || []);
     curLine = -2; curClip = -2;
     render(now());
@@ -52,16 +53,37 @@
     clips = items
       .sort((a, b) => a.at - b.at)
       .map((c) => {
+        // { "scene": "timelapse" } = đoạn hoạt hình vẽ bằng canvas (scene.js), không cần file
+        if (c.scene) return { ...c, at: c.at || 0, el: null, vid: false };
         const vid = /\.(mp4|webm|mov)$/i.test(c.src);
         const el = document.createElement(vid ? 'video' : 'div');
         el.className = 'clip' + (vid ? '' : ' img');
-        if (vid) Object.assign(el, { src: c.src, muted: true, loop: true, playsInline: true, preload: 'auto' });
-        else el.style.backgroundImage = `url("${c.src}")`;
+        const item = { ...c, at: c.at || 0, from: c.from || 0, el, vid, missing: false };
+        if (vid) {
+          Object.assign(el, { src: c.src, muted: true, loop: true, playsInline: true, preload: 'auto' });
+          el.onerror = () => { item.missing = true; };
+        } else loadImage(item);
         clipsEl.appendChild(el);
-        return { ...c, at: c.at || 0, from: c.from || 0, el, vid };
+        return item;
       });
-    $('bg').style.display = clips.length ? 'none' : '';
+    clips.forEach((c, k) => { c.len = (clips[k + 1]?.at ?? songLen()) - c.at; });
   }
+
+  // Thử .jpg rồi .jpeg .png .webp; không có file thì dùng nền đêm vẽ sẵn thay vào chỗ đó
+  function loadImage(item) {
+    const base = item.src.replace(/\.(jpe?g|png|webp|gif)$/i, '');
+    const tries = [item.src, ...['.jpg', '.jpeg', '.png', '.webp', '.JPG', '.PNG'].map((e) => base + e)]
+      .filter((v, i, a) => a.indexOf(v) === i);
+    const next = (k) => {
+      if (k >= tries.length) { item.missing = true; return; }
+      const img = new Image();
+      img.onload = () => { item.el.style.backgroundImage = `url("${tries[k]}")`; };
+      img.onerror = () => next(k + 1);
+      img.src = tries[k];
+    };
+    next(0);
+  }
+  const songLen = () => Math.max(1, ...lines.map((l) => l.end || 0));
 
   let curClip = -2;
   function renderClip(t, playing) {
@@ -69,11 +91,11 @@
     clips.forEach((c, k) => { if (t >= c.at) i = k; });
     if (i < 0 && clips.length) i = 0;
     if (i !== curClip) {
-      clips[curClip]?.el.classList.remove('on');
+      clips[curClip]?.el?.classList.remove('on');
       if (clips[curClip]?.vid) clips[curClip].el.pause();
       curClip = i;
       const c = clips[i];
-      if (c) {
+      if (c?.el) {
         c.el.classList.add('on');
         if (c.vid) { try { c.el.currentTime = c.from + Math.max(0, t - c.at); } catch {} }
       }
@@ -170,8 +192,15 @@
 
   // ---------- Nền vẽ bằng canvas khi chưa có clip ----------
   const scene = window.NightScene ? window.NightScene.create($('bg')) : null;
+  const bgEl = $('bg');
   function renderScene(t) {
-    if (!scene || clips.length) return;
+    if (!scene) return;
+    const c = clips[curClip];
+    // đang là ảnh/clip có file -> tắt canvas cho nhẹ máy
+    const useCanvas = !c || c.scene || c.missing;
+    bgEl.style.visibility = useCanvas ? 'visible' : 'hidden';
+    if (!useCanvas) return;
+    if (c?.scene) return scene.draw(t, c.scene, t - c.at, c.len);
     const list = song.scenes || [[0, 'snowforest']];
     let cur = list[0];
     for (const s of list) if (t >= s[0]) cur = s;
@@ -202,7 +231,7 @@
   }
 
   // Bấm lá thư: thư mở xong -> màn mờ hết -> rồi mới phát nhạc (không mất đoạn đầu)
-  const OPEN_MS = 900;   // nắp lật + thư nhô lên (khớp transition trong style.css)
+  const OPEN_MS = 1500;  // nắp lật + thư nhô lên + tim bay (khớp transition trong style.css)
   const FADE_MS = 600;   // màn lá thư mờ đi (#start transition .6s)
   let opening = false;
   startBtn.addEventListener('click', () => {
