@@ -79,6 +79,7 @@ Ví dụ `index.html?t=27` là đoạn bốn mùa, `index.html?t=41` là đoạn
 | – | 🎬 hoạt hình `timelapse` | một ngày hai mươi tư tiếng trôi mau | 5.15 |
 | 7 | `07-dung-ban-tam.jpg` | đừng bận tâm đến những nỗi đau | 7.75 |
 | 8 | `08-cuoi-len-di.jpg` | \*cười lên đi | 9.95 |
+| 8b | `08b-em-2.jpg` | **EM** (chữ chớp lần 2, trước đoạn 2) | 10.95 |
 | 9 | `09-khong-duoc-phep-2.jpg` | không được phép *(ảnh nền)* | 11.55 |
 | 10 | `10-lanh-lung.jpg` | lạnh lùng | 12.55 |
 | 11 | `11-ben-canh-anh.jpg` | bên cạnh anh | 13.15 |

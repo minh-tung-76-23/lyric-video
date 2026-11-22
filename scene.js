@@ -750,5 +750,6 @@ window.NightScene = (() => {
     }
     return { draw, setFaces, kinds: [...Object.keys(KINDS), ...Object.keys(SPECIAL)] };
   }
-  return { create, KINDS };
+  // parts: các hàm vẽ nhân vật/hiệu ứng, dùng lại khi tạo ảnh minh hoạ
+  return { create, KINDS, parts: { standing, head, bouquet, glowAt, skyFill, hash, ramp, mix, setFaces, FACES } };
 })();
