@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Lyrics</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500&family=Mali:wght@600;700&family=Patrick+Hand&family=Great+Vibes&family=Sacramento&family=Caveat&family=Dancing+Script:wght@500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="stage">
+    <canvas id="bg"></canvas>
+    <div id="clips"></div>
+    <div id="vignette"></div>
+    <div id="lyric"></div>
+    <div id="grain"></div>
+    <div id="scratch"></div>
+    <div id="nomusic" hidden>chua co music/song.mp3 - dang chay khong nhac</div>
+  </div>
+
+  <!-- Màn mở đầu: chỉ có lá thư, bấm vào là mở thư + phát nhạc -->
+  <button id="start" aria-label="Mở thư và nghe nhạc">
+    <span class="snow"></span>
+    <span class="halo"></span>
+    <span class="envelope">
+      <span class="env-back"></span>
+      <span class="letter"></span>
+      <span class="env-front">
+        <!-- nếp gấp của túi thư -->
+        <svg class="folds" viewBox="0 0 160 100" preserveAspectRatio="none" aria-hidden="true">
+          <path d="M0 100 L80 54 L160 100 Z" fill="#fff" fill-opacity=".18"/>
+          <path d="M0 100 L80 54 L160 100" fill="none" stroke="#7a5a44" stroke-opacity=".22" stroke-width=".5"/>
+          <path d="M0 0 L66 62 M160 0 L94 62" fill="none" stroke="#7a5a44" stroke-opacity=".12" stroke-width=".4"/>
+        </svg>
+        <!-- tem thư: cảnh đêm có trăng + đèn đường -->
+        <svg class="stamp" viewBox="-3 -3 70 86" aria-hidden="true">
+          <defs>
+            <mask id="perf">
+              <rect x="-3" y="-3" width="70" height="86" fill="#fff"/>
+              <g fill="#000"><circle cx="0.0" cy="0" r="2"/><circle cx="0.0" cy="80" r="2"/><circle cx="5.3" cy="0" r="2"/><circle cx="5.3" cy="80" r="2"/><circle cx="10.7" cy="0" r="2"/><circle cx="10.7" cy="80" r="2"/><circle cx="16.0" cy="0" r="2"/><circle cx="16.0" cy="80" r="2"/><circle cx="21.3" cy="0" r="2"/><circle cx="21.3" cy="80" r="2"/><circle cx="26.6" cy="0" r="2"/><circle cx="26.6" cy="80" r="2"/><circle cx="32.0" cy="0" r="2"/><circle cx="32.0" cy="80" r="2"/><circle cx="37.3" cy="0" r="2"/><circle cx="37.3" cy="80" r="2"/><circle cx="42.6" cy="0" r="2"/><circle cx="42.6" cy="80" r="2"/><circle cx="48.0" cy="0" r="2"/><circle cx="48.0" cy="80" r="2"/><circle cx="53.3" cy="0" r="2"/><circle cx="53.3" cy="80" r="2"/><circle cx="58.6" cy="0" r="2"/><circle cx="58.6" cy="80" r="2"/><circle cx="64.0" cy="0" r="2"/><circle cx="64.0" cy="80" r="2"/><circle cx="0" cy="5.3" r="2"/><circle cx="64" cy="5.3" r="2"/><circle cx="0" cy="10.7" r="2"/><circle cx="64" cy="10.7" r="2"/><circle cx="0" cy="16.0" r="2"/><circle cx="64" cy="16.0" r="2"/><circle cx="0" cy="21.3" r="2"/><circle cx="64" cy="21.3" r="2"/><circle cx="0" cy="26.6" r="2"/><circle cx="64" cy="26.6" r="2"/><circle cx="0" cy="32.0" r="2"/><circle cx="64" cy="32.0" r="2"/><circle cx="0" cy="37.3" r="2"/><circle cx="64" cy="37.3" r="2"/><circle cx="0" cy="42.6" r="2"/><circle cx="64" cy="42.6" r="2"/><circle cx="0" cy="48.0" r="2"/><circle cx="64" cy="48.0" r="2"/><circle cx="0" cy="53.3" r="2"/><circle cx="64" cy="53.3" r="2"/><circle cx="0" cy="58.6" r="2"/><circle cx="64" cy="58.6" r="2"/><circle cx="0" cy="64.0" r="2"/><circle cx="64" cy="64.0" r="2"/><circle cx="0" cy="69.3" r="2"/><circle cx="64" cy="69.3" r="2"/><circle cx="0" cy="74.6" r="2"/><circle cx="64" cy="74.6" r="2"/></g>
+            </mask>
+            <linearGradient id="nightsky" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#1a2340"/><stop offset="1" stop-color="#3b3350"/>
+            </linearGradient>
+            <radialGradient id="lampglow"><stop offset="0" stop-color="#ffd98a"/><stop offset="1" stop-color="#ffd98a" stop-opacity="0"/></radialGradient>
+          </defs>
+          <g mask="url(#perf)">
+            <rect x="-1" y="-1" width="66" height="82" fill="#f7efe3"/>
+            <rect x="5" y="5" width="54" height="70" fill="url(#nightsky)"/>
+            <circle cx="43" cy="20" r="7" fill="#f5e6bb"/>
+            <circle cx="46.5" cy="17.5" r="6.2" fill="#1d2542"/>
+            <g fill="#fff" fill-opacity=".8"><circle cx="14" cy="14" r=".7"/><circle cx="25" cy="10" r=".5"/><circle cx="33" cy="30" r=".5"/><circle cx="52" cy="35" r=".6"/><circle cx="11" cy="32" r=".5"/></g>
+            <path d="M5 62 Q32 55 59 62 V75 H5 Z" fill="#141a2c"/>
+            <circle cx="20" cy="40" r="9" fill="url(#lampglow)" opacity=".7"/>
+            <path d="M20 62 V40 h3" stroke="#0d1120" stroke-width="1.2" fill="none"/>
+            <circle cx="23.5" cy="41" r="1.4" fill="#ffe7b0"/>
+            <text x="56" y="72" text-anchor="end" font-family="Oswald, sans-serif" font-size="6" fill="#f7efe3" fill-opacity=".85">2026</text>
+          </g>
+        </svg>
+        <!-- dấu bưu điện -->
+        <svg class="postmark" viewBox="0 0 120 60" aria-hidden="true">
+          <g fill="none" stroke="#5b3b2e" stroke-opacity=".42" stroke-width="1.4">
+            <circle cx="30" cy="30" r="22"/><circle cx="30" cy="30" r="17" stroke-dasharray="2 2.5"/>
+            <path d="M58 18 q8 -5 16 0 t16 0 t16 0 M58 30 q8 -5 16 0 t16 0 t16 0 M58 42 q8 -5 16 0 t16 0 t16 0"/>
+          </g>
+          <text x="30" y="33" text-anchor="middle" font-family="Oswald, sans-serif" font-size="8" letter-spacing="1" fill="#5b3b2e" fill-opacity=".45">♥ ‍🏭👩‍🏭</text>
+        </svg>
+      </span>
+      <span class="flap-wrap"><span class="env-flap"></span></span>
+      <!-- dấu sáp -->
+      <svg class="seal" viewBox="0 0 100 100" aria-hidden="true">
+        <defs>
+          <radialGradient id="wax" cx="38%" cy="32%" r="70%">
+            <stop offset="0" stop-color="#e5485e"/><stop offset=".5" stop-color="#a8152e"/><stop offset="1" stop-color="#5e0614"/>
+          </radialGradient>
+        </defs>
+        <path fill="url(#wax)" d="M95.2 50.0L97.7 55.4L94.3 60.1L90.3 64.1L90.5 69.5L90.0 75.1L84.5 77.5L79.1 79.1L77.0 83.8L74.2 88.5L68.5 88.5L63.2 87.8L59.5 91.6L55.1 95.2L50.0 93.2L45.4 90.8L40.2 93.0L34.4 94.5L30.5 90.5L27.3 86.1L21.7 85.5L16.1 83.9L14.7 78.2L14.2 72.5L9.9 69.3L6.0 65.4L7.5 59.7L9.7 54.5L7.2 50.0L5.0 44.9L8.5 40.5L12.1 36.7L11.3 31.3L11.1 25.5L15.7 22.7L20.5 20.5L22.1 15.0L24.6 9.6L30.3 9.2L35.9 9.6L39.9 5.8L44.7 2.6L50.0 5.2L54.7 8.5L59.8 7.2L65.2 6.6L68.7 11.2L71.4 16.0L76.6 16.7L82.0 18.0L83.5 23.3L84.3 28.4L89.2 31.1L94.0 34.6L93.3 40.1L92.0 45.3L95.2 50.0Z"/>
+        <circle cx="50" cy="50" r="31" fill="none" stroke="#4a0410" stroke-opacity=".45" stroke-width="3"/>
+        <circle cx="49" cy="49" r="31" fill="none" stroke="#ff9fae" stroke-opacity=".28" stroke-width="1.2"/>
+        <path transform="translate(50 52) scale(1.25)" d="M0 10 C-14 0 -14 -12 -6 -12 C-2 -12 0 -9 0 -7 C0 -9 2 -12 6 -12 C14 -12 14 0 0 10 Z" fill="#ff9fae" fill-opacity=".3" transform-origin="0 0"/>
+        <path transform="translate(51 53) scale(1.25)" d="M0 10 C-14 0 -14 -12 -6 -12 C-2 -12 0 -9 0 -7 C0 -9 2 -12 6 -12 C14 -12 14 0 0 10 Z" fill="#5e0614" fill-opacity=".75"/>
+        <ellipse cx="34" cy="30" rx="10" ry="5" transform="rotate(-30 34 30)" fill="#fff" fill-opacity=".18"/>
+      </svg>
+    </span>
+  </button>
+  <audio id="audio" preload="auto"></audio>
+
+  <script src="song.js"></script>
+  <script src="lyric-core.js"></script>
+  <script src="scene.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

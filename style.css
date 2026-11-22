@@ -1,0 +1,351 @@
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  background: #000;
+  color: #f2efe9;
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+body { display: flex; align-items: center; justify-content: center; }
+
+/* Khung ngang 4:3 như video, điện thoại dọc thì có viền đen trên dưới */
+#stage {
+  position: relative;
+  width: min(100vw, calc(100dvh * 4 / 3));
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  background: #000;
+  container-type: size;
+}
+
+/* Nền khi chưa có clip: canvas vẽ đường đêm (scene.js), hơi nhòe như quay điện thoại */
+#bg {
+  position: absolute; inset: -3%;
+  width: 106%; height: 106%;
+  display: block;
+  background: #07090d;
+  filter: blur(.9px) brightness(.85) contrast(1.05) saturate(.85);
+  animation: handheld 7s ease-in-out infinite alternate;
+}
+
+/* ---------- Clip nền ---------- */
+.clip {
+  position: absolute; inset: -3%;
+  width: 106%; height: 106%;
+  object-fit: cover;
+  background-size: cover; background-position: center;
+  visibility: hidden;
+  filter: brightness(.8) contrast(1.08) saturate(.8) sepia(.1);
+}
+.clip.on { visibility: visible; animation: handheld 7s ease-in-out infinite alternate; }
+@keyframes handheld {               /* rung nhẹ như cầm máy đi bộ */
+  0%   { transform: translate(0, 0) rotate(0); }
+  25%  { transform: translate(-.6%, .4%) rotate(-.3deg); }
+  50%  { transform: translate(.4%, -.3%) rotate(.2deg); }
+  75%  { transform: translate(-.3%, -.5%) rotate(-.15deg); }
+  100% { transform: translate(.5%, .3%) rotate(.25deg); }
+}
+/* ảnh tĩnh: tối bớt cho chữ dễ đọc + phóng to chậm cho có chuyển động */
+.clip.img { filter: brightness(.68) contrast(1.08) saturate(.8) sepia(.12); }
+.clip.img.on { animation: kenburns 9s ease-out forwards; }
+@keyframes kenburns {
+  from { transform: scale(1) translate(0, 0); }
+  to   { transform: scale(1.1) translate(-1.5%, -1%); }
+}
+
+#vignette {
+  position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(ellipse at center, transparent 55%, #000a 100%);
+}
+
+/* hạt nhiễu phim */
+#grain {
+  position: absolute; inset: -50%;
+  pointer-events: none;
+  opacity: .14;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  animation: grain .5s steps(4) infinite;
+}
+@keyframes grain {
+  25% { transform: translate(-3%, 2%); } 50% { transform: translate(2%, -3%); }
+  75% { transform: translate(-1%, -2%); } 100% { transform: translate(3%, 1%); }
+}
+
+/* vạch xước dọc */
+#scratch {
+  position: absolute; inset: 0; pointer-events: none;
+  background:
+    linear-gradient(90deg, transparent 0 21.7%, #ffffff38 21.8%, transparent 21.95%),
+    linear-gradient(90deg, transparent 0 73.4%, #00000060 73.5%, transparent 73.6%);
+  animation: scratch 1.3s steps(1) infinite;
+}
+@keyframes scratch {
+  0%  { background-position: 0 0, 0 0; opacity: 1; }
+  30% { background-position: 18% 0, -40% 0; opacity: .5; }
+  55% { background-position: -9% 0, 12% 0; opacity: 0; }
+  80% { background-position: 30% 0, -6% 0; opacity: .8; }
+}
+
+/* ---------- Lời ---------- */
+#lyric {
+  position: absolute; inset: 0;
+  display: grid; place-items: center;
+  pointer-events: none;
+}
+#lyric > * { grid-area: 1 / 1; }
+
+.line {
+  display: flex; flex-wrap: wrap; justify-content: center;
+  gap: 0 .28em;
+  max-width: 88cqw;
+  text-align: center;
+  position: relative; z-index: 2;
+}
+/* chưa tới thì KHÔNG chiếm chỗ -> câu tự căn giữa khi dài ra (giống video) */
+.w { display: none; white-space: nowrap; }
+.w.on { display: inline-block; }
+.line.hidden { display: none; }
+
+/* trắng: chữ mảnh cao */
+.s-white {
+  font-family: 'Oswald', sans-serif; font-weight: 300;
+  font-size: 4.5cqw;
+  color: #f2efe9;
+  text-shadow: 0 1px 3px #000c, 0 0 8px #0006;
+}
+/* tô màu 1 từ trong câu: lo{red} then{pink} dong{blue} xuan{yellow} */
+.w.red    { color: #d8103f; }
+.w.pink   { color: #ff5fa8; }
+.w.blue   { color: #8fc4ef; }
+.w.yellow { color: #f2c81d; }
+/* [hl]: từ đang hát đỏ, từ cũ trắng lại */
+.w.cur    { color: #e0174a; }
+
+/* đỏ thẫm: cùng kiểu chữ mảnh, đậm hơn chút */
+.s-red {
+  font-family: 'Oswald', sans-serif; font-weight: 400;
+  font-size: 4.5cqw;
+  color: #b0103e;
+  text-shadow: 0 0 1px #3a0010, 0 1px 3px #000a;
+}
+
+/* hồng: chữ tròn, hiện cả câu */
+.s-pink {
+  font-family: 'Mali', cursive; font-weight: 600;
+  font-size: 4.4cqw;
+  letter-spacing: .08em;
+  color: #ff5f8a;
+  text-shadow: 0 0 1px #5a0f2a, 0 1px 4px #000b;
+}
+
+/* xanh nhạt: "*cuoi len di", "luc em cuoi" */
+.s-blue {
+  font-family: 'Mali', cursive; font-weight: 600;
+  font-size: 4.6cqw;
+  letter-spacing: .1em;
+  color: #a3d6ff;
+  text-shadow: 0 0 1px #0d2c4d, 0 0 2px #0d2c4d, 0 2px 6px #000a;
+}
+
+/* xanh to đậm, từng từ thay nhau: "lay / mot / phut / ben / nguoi" */
+.s-bluebig {
+  font-family: 'Mali', cursive; font-weight: 700;
+  font-size: 8cqw;
+  letter-spacing: .06em;
+  color: #a9dcff;
+  text-shadow: 0 0 1px #0d2c4d, 0 0 3px #0d2c4d, 0 3px 8px #000a;
+}
+
+/* xanh viết tay mảnh: "du cho lam bao giong..." */
+.s-bluehand {
+  font-family: 'Patrick Hand', cursive;
+  font-size: 4.6cqw;
+  letter-spacing: .14em;
+  gap: 0 .5em;
+  color: #79b4ec;
+  text-shadow: 0 1px 3px #000c;
+}
+
+/* đỏ viết tay nối nét: "mai mot nguoi" */
+.s-redhand {
+  font-family: 'Dancing Script', cursive; font-weight: 500;
+  font-size: 6.8cqw;
+  gap: 0 .22em;
+  color: #e3173f;
+  text-shadow: 0 1px 3px #000c;
+}
+
+/* ---------- Chữ ký to phía sau ---------- */
+.bigrow {
+  display: flex; justify-content: center; align-items: center;
+  gap: 0 5cqw;
+  z-index: 1;
+  white-space: nowrap;
+  transform: translateY(-8%);
+}
+.big {
+  display: none;
+  line-height: 1;
+  font-family: 'Caveat', cursive;           /* "Muon Sau" xám viết tay */
+  font-size: 22cqw;
+  color: #c4c4c4c0;
+  text-shadow: 0 2px 8px #0005;
+}
+.big.on { display: inline-block; animation: bigIn .18s ease-out; }
+@keyframes bigIn { from { opacity: 0; transform: scale(.92); } to { opacity: 1; transform: none; } }
+.b-red     { font-family: 'Great Vibes', cursive; color: #e0101ef2; font-size: 24cqw; }       /* "Tuong" "Tu" */
+.b-crimson { font-family: 'Great Vibes', cursive; color: #c0124ad0; font-size: 20cqw; }       /* "Lanh Lung" */
+.b-yellow  { font-family: 'Sacramento', cursive; color: #f6e51a; font-size: 21cqw; -webkit-text-stroke: .25cqw #f6e51a; text-shadow: 0 0 2px #5a4b00; }
+.b-pink    { font-family: 'Patrick Hand', cursive; color: #ff5fbd; font-size: 11cqw; letter-spacing: .12em; } /* "Em Oi!" */
+
+/* chữ IN HOA to chớp 0.2s: "EM" "ANH" */
+.flash {
+  display: none;
+  z-index: 3;
+  line-height: 1;
+  font-family: 'Oswald', sans-serif; font-weight: 500;
+  font-size: 32cqw;
+  letter-spacing: .02em;
+  text-shadow: 0 3px 10px #0006;
+}
+.flash.on { display: block; }
+.f-pink { color: #ff5cc4; }
+.f-red  { color: #dc101c; }
+#lyric.flashing .line, #lyric.flashing .bigrow { visibility: hidden; }
+
+/* ---------- Khác ---------- */
+#nomusic {
+  position: absolute; left: 0; right: 0; bottom: 3%;
+  text-align: center;
+  font: 300 1.8cqw 'Oswald', sans-serif;
+  color: #ffffff70;
+}
+
+/* ---------- Màn mở đầu: lá thư ---------- */
+#start {
+  --w: min(80vw, 460px);
+  position: fixed; inset: 0;
+  display: grid; place-items: center;
+  border: 0; padding: 0; cursor: pointer;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse at 50% 115%, #1d2333 0, transparent 60%),
+    radial-gradient(ellipse at 50% -10%, #11141c 0, transparent 55%),
+    #040506;
+  z-index: 10;
+  transition: opacity .6s ease, transform .6s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+#start.hide { opacity: 0; transform: scale(1.08); pointer-events: none; }
+#start > span, #start .envelope > * { position: absolute; display: block; }
+
+/* tuyết rơi */
+#start .snow {
+  inset: -100% 0 0;
+  background-image:
+    radial-gradient(1.5px 1.5px at 10% 20%, #fff9 50%, transparent 51%),
+    radial-gradient(1px 1px at 30% 70%, #fff8 50%, transparent 51%),
+    radial-gradient(2px 2px at 55% 35%, #fff7 50%, transparent 51%),
+    radial-gradient(1px 1px at 75% 85%, #fff9 50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 90% 50%, #fff6 50%, transparent 51%),
+    radial-gradient(1px 1px at 45% 5%, #fff8 50%, transparent 51%);
+  background-size: 220px 220px;
+  animation: snowfall 14s linear infinite;
+  opacity: .6;
+}
+@keyframes snowfall { to { transform: translateY(50%); } }
+
+/* quầng sáng ấm sau lá thư */
+#start .halo {
+  width: calc(var(--w) * 1.6); aspect-ratio: 1.6;
+  background: radial-gradient(ellipse, #ffb88a2e 0, #ff8a6a12 40%, transparent 68%);
+  animation: breathe 4s ease-in-out infinite;
+}
+@keyframes breathe { 50% { opacity: .55; transform: scale(.94); } }
+
+/* phong bì */
+#start .envelope {
+  position: relative;
+  width: var(--w); aspect-ratio: 1.6;
+  perspective: 1000px;
+  filter: drop-shadow(0 22px 28px #000b) drop-shadow(0 4px 6px #0007);
+  animation: floaty 4.5s ease-in-out infinite;
+  transition: transform .3s ease;
+}
+@keyframes floaty { 50% { transform: translateY(-7px) rotate(-.8deg); } }
+#start:hover .envelope, #start:focus-visible .envelope { transform: translateY(-5px) scale(1.025); }
+
+/* vân giấy */
+.env-back, .env-front, .env-flap, .letter {
+  --paper: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .45 0 0 0 0 .35 0 0 0 0 .25 0 0 0 .22 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23p)'/%3E%3C/svg%3E");
+}
+/* lòng phong bì: lót giấy kẻ sọc hồng */
+.env-back {
+  inset: 0; border-radius: 7px;
+  background:
+    var(--paper),
+    repeating-linear-gradient(135deg, #8d4a52 0 6px, #a65d63 6px 12px);
+}
+.letter {
+  left: 6%; right: 6%; top: 7%; bottom: 8%;
+  border-radius: 3px;
+  background:
+    var(--paper),
+    repeating-linear-gradient(transparent 0 calc(var(--w) * .06), #e2d6c6 calc(var(--w) * .06) calc(var(--w) * .062)),
+    #fdf8ef;
+  box-shadow: 0 -2px 6px #0003;
+  transition: transform .5s cubic-bezier(.3, .7, .2, 1) .15s;
+}
+.env-front {
+  inset: 0; border-radius: 7px; overflow: hidden;
+  background: var(--paper), linear-gradient(165deg, #f6eadc 0%, #ead6c2 100%);
+  clip-path: polygon(0 0, 50% 58%, 100% 0, 100% 100%, 0 100%);
+}
+.env-front .folds { position: absolute; inset: 0; width: 100%; height: 100%; }
+.env-front .stamp {
+  position: absolute; right: 5%; bottom: 8%;
+  width: 14%; transform: rotate(4deg);
+  filter: drop-shadow(0 1px 1.5px #0005);
+}
+.env-front .postmark {
+  position: absolute; right: 12%; bottom: 14%;
+  width: 26%; transform: rotate(-8deg);
+  mix-blend-mode: multiply;
+}
+/* nắp thư (bọc ngoài để có bóng đổ) */
+.flap-wrap {
+  left: 0; top: 0; width: 100%; height: 64%;
+  transform-origin: top center;
+  filter: drop-shadow(0 3px 3px #0000002e);
+  transition: transform .45s cubic-bezier(.5, 0, .3, 1), z-index 0s .22s;
+  z-index: 4;
+}
+.env-flap {
+  position: absolute; inset: 0;
+  border-radius: 7px 7px 0 0;
+  background: var(--paper), linear-gradient(180deg, #f1e2d1 0%, #e2c9b2 100%);
+  clip-path: polygon(0 0, 100% 0, 52% 96%, 50% 100%, 48% 96%);
+}
+.seal {
+  left: 50%; top: 64%; z-index: 5;
+  width: 19%;
+  transform: translate(-50%, -50%) rotate(-8deg);
+  filter: drop-shadow(0 3px 3px #0007);
+  animation: sealPulse 2.4s ease-in-out infinite;
+  transition: opacity .25s, transform .3s;
+}
+@keyframes sealPulse {
+  50% { transform: translate(-50%, -50%) rotate(-8deg) scale(1.06); filter: drop-shadow(0 3px 3px #0007) drop-shadow(0 0 10px #e5485e66); }
+}
+
+/* mở thư */
+#start.open { cursor: default; }
+#start.open .envelope { animation: none; }
+#start.open .seal { animation: none; opacity: 0; transform: translate(-50%, -50%) scale(1.5) rotate(10deg); }
+#start.open .flap-wrap { transform: rotateX(180deg); z-index: 1; }
+#start.open .letter { transform: translateY(-38%); }
+
+@media (prefers-reduced-motion: reduce) {
+  #grain, #scratch, .clip.on, #bg, #start * { animation: none !important; }
+}
