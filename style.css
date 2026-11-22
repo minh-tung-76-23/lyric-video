@@ -79,8 +79,9 @@ body { display: flex; align-items: center; justify-content: center; }
   75% { transform: translate(-1%, -2%); } 100% { transform: translate(3%, 1%); }
 }
 
-/* vạch xước dọc */
+/* vạch xước dọc (đang tắt - xoá dòng display: none để bật lại) */
 #scratch {
+  display: none;
   position: absolute; inset: 0; pointer-events: none;
   background:
     linear-gradient(90deg, transparent 0 21.7%, #ffffff38 21.8%, transparent 21.95%),
