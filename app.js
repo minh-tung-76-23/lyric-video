@@ -17,7 +17,12 @@
     document.title = s.title || 'Lyrics';
     if (!EMBED) audio.src = audioUrl || s.audio || 'music/song.mp3';
     applyAspect(qs.get('ratio') || s.aspect || '4:3');
-    scene?.setFaces(s.faces);   // ảnh mặt cho nhân vật trong hoạt hình
+    // ảnh mặt cho nhân vật trong hoạt hình; ?face=anime -> dùng faces/anh-anime.*, faces/em-anime.*
+    const fv = qs.get('face');
+    const faces = fv && s.faces
+      ? Object.fromEntries(Object.entries(s.faces).map(([k, p]) => [k, p.replace(/(\.[a-z]+)?$/i, `-${fv}$1`)]))
+      : s.faces;
+    scene?.setFaces(faces);
     buildClips(s.clips || []);
     curLine = -2; curClip = -2;
     render(now());

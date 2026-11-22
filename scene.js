@@ -61,127 +61,238 @@ window.NightScene = (() => {
       const next = (i) => {
         if (i >= tries.length) return;
         const img = new Image();
-        img.onload = () => { FACES[k] = img; };
+        img.onload = () => {
+          // ảnh PNG nền trong suốt (vd đầu chibi có tóc) -> vẽ nguyên cả đầu, không cắt tròn
+          let full = false;
+          try {
+            const c = document.createElement('canvas'); c.width = c.height = 16;
+            const cx = c.getContext('2d'); cx.drawImage(img, 0, 0, 16, 16);
+            full = cx.getImageData(0, 0, 1, 1).data[3] < 10 && cx.getImageData(15, 0, 1, 1).data[3] < 10;
+          } catch {}
+          img.full = full;
+          FACES[k] = img;
+        };
         img.onerror = () => next(i + 1);
         img.src = tries[i];
       };
       next(0);
     });
   }
+  // Nhân vật kiểu chibi: đầu to, thân ngắn tròn, tay chân mũm mĩm, viền nét kiểu anime.
+  // chin = cằm nằm ở bao nhiêu phần chiều cao ảnh đầu chibi (em tóc dài xuống dưới cằm nên nhỏ hơn)
   const LOOK = {
-    anh: { skin: '#efc29d', hair: '#17110f', long: false, shirt: '#2f4a6d', pants: '#1c2130', coat: '#f2c230' },
-    em:  { skin: '#f6cfb2', hair: '#2a1913', long: true, shirt: '#f2a3b6', pants: '#f2a3b6', dress: true, coat: '#f07ea0' },
+    anh: { skin: '#f7d6c0', hair: '#3a2a24', long: false, top: '#46679b', top2: '#34507c', pants: '#2c3040', shoe: '#5a3c2e', coat: '#f6cc4e', coat2: '#dcaa2c', helmet: '#9fd0ff', helmet2: '#5f8fc4', deco: 'bear', chin: 0.97 },
+    em:  { skin: '#f9dfcf', hair: '#3a2620', long: true, top: '#f6aec2', top2: '#e48aa6', pants: '#f9dfcf', shoe: '#9a4e62', dress: true, bow: '#e0405e', coat: '#f7a3be', coat2: '#e07a9c', helmet: '#ffb6d0', helmet2: '#d9779c', deco: 'cat', chin: 0.86 },
   };
+  const INK = '#4a3232';
   const ln = (ctx, x1, y1, x2, y2) => { ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); };
   const rrect = (ctx, x, y, w, h, r) => { ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x, y, w, h, r) : ctx.rect(x, y, w, h); ctx.fill(); };
+  const ink = (ctx, w) => { ctx.strokeStyle = INK; ctx.lineWidth = w; ctx.stroke(); };
+  // tay / chân dạng viên nhộng có viền
+  function limb(ctx, pts, color, w, lw) {
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    const path = () => { ctx.beginPath(); pts.forEach(([px, py], i) => (i ? ctx.lineTo(px, py) : ctx.moveTo(px, py))); };
+    path(); ctx.strokeStyle = INK; ctx.lineWidth = w + lw * 2; ctx.stroke();
+    path(); ctx.strokeStyle = color; ctx.lineWidth = w; ctx.stroke();
+  }
+  function dot(ctx, x, y, r, color, lw) {
+    ctx.fillStyle = color; ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill(); if (lw) ink(ctx, lw);
+  }
 
-  function head(ctx, x, y, r, who, hood) {
-    const L = LOOK[who], img = FACES[who];
-    if (!img && L.long && !hood) {   // tóc dài phía sau
-      ctx.fillStyle = L.hair;
-      ctx.beginPath(); ctx.arc(x, y, r * 1.12, 0, 7); ctx.fill();
-      ctx.beginPath();   // 2 lọn tóc hai bên, không che cằm
-      ctx.ellipse(x - r * 0.82, y + r * 0.75, r * 0.42, r * 1.05, 0.1, 0, 7);
-      ctx.ellipse(x + r * 0.82, y + r * 0.75, r * 0.42, r * 1.05, -0.1, 0, 7);
+  // đầu: chinY = vị trí cằm, size = bề ngang đầu
+  function head(ctx, x, chinY, size, who, hood) {
+    const L = LOOK[who], img = FACES[who], lw = Math.max(1, size * 0.025);
+    if (hood) {   // mũ áo mưa nằm sau đầu
+      ctx.fillStyle = hood; ctx.beginPath(); ctx.arc(x, chinY - size * 0.46, size * 0.56, 0, 7); ctx.fill(); ink(ctx, lw);
+    }
+    if (img && img.full) {   // ảnh đầu chibi có tóc, nền trong suốt
+      ctx.drawImage(img, x - size / 2, chinY - size * (L.chin || 0.95), size, size);
+      return;
+    }
+    const r = size * 0.4, cy = chinY - r;
+    if (!img && L.long && !hood) {   // 2 lọn tóc dài hai bên
+      ctx.fillStyle = L.hair; ctx.beginPath();
+      ctx.ellipse(x - r * 0.85, cy + r * 0.7, r * 0.45, r * 1.05, 0.1, 0, 7);
+      ctx.ellipse(x + r * 0.85, cy + r * 0.7, r * 0.45, r * 1.05, -0.1, 0, 7);
       ctx.fill();
     }
-    ctx.save();
-    ctx.beginPath(); ctx.arc(x, y, r, 0, 7);
-    if (img) {   // ảnh mặt: cắt tròn, lấy phần giữa ảnh
+    ctx.save(); ctx.beginPath(); ctx.arc(x, cy, r, 0, 7);
+    if (img) {   // ảnh mặt thường: cắt tròn phần giữa ảnh
       ctx.clip();
       const s = Math.max((2 * r) / img.width, (2 * r) / img.height);
-      ctx.drawImage(img, x - (img.width * s) / 2, y - (img.height * s) / 2, img.width * s, img.height * s);
+      ctx.drawImage(img, x - (img.width * s) / 2, cy - (img.height * s) / 2, img.width * s, img.height * s);
     } else { ctx.fillStyle = L.skin; ctx.fill(); }
     ctx.restore();
-    if (img) {
-      ctx.strokeStyle = '#ffffffb0'; ctx.lineWidth = Math.max(1, r * 0.08);
-      ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.stroke();
-    } else {
-      if (!hood) {   // mái tóc
-        ctx.fillStyle = L.hair; ctx.beginPath();
-        ctx.arc(x, y, r * 1.06, Math.PI * 0.95, Math.PI * 2.05);
-        ctx.lineTo(x + r * 0.9, y - r * 0.15);
-        ctx.quadraticCurveTo(x, y - r * 0.65, x - r * 0.9, y - r * 0.15);
-        ctx.closePath(); ctx.fill();
-      }
-      ctx.fillStyle = '#2a1a14';
-      ctx.beginPath(); ctx.arc(x - r * 0.36, y + r * 0.12, r * 0.11, 0, 7); ctx.arc(x + r * 0.36, y + r * 0.12, r * 0.11, 0, 7); ctx.fill();
-      ctx.fillStyle = '#ff8fa3aa';
-      ctx.beginPath(); ctx.ellipse(x - r * 0.58, y + r * 0.42, r * 0.18, r * 0.1, 0, 0, 7); ctx.ellipse(x + r * 0.58, y + r * 0.42, r * 0.18, r * 0.1, 0, 0, 7); ctx.fill();
-      ctx.strokeStyle = '#7a3a3a'; ctx.lineWidth = Math.max(1, r * 0.08);
-      ctx.beginPath(); ctx.arc(x, y + r * 0.38, r * 0.2, 0.15 * Math.PI, 0.85 * Math.PI); ctx.stroke();
+    ctx.beginPath(); ctx.arc(x, cy, r, 0, 7); ink(ctx, lw);
+    if (img) return;
+    if (!hood) {   // mái tóc
+      ctx.fillStyle = L.hair; ctx.beginPath();
+      ctx.arc(x, cy, r * 1.06, Math.PI * 0.95, Math.PI * 2.05);
+      ctx.lineTo(x + r * 0.9, cy - r * 0.1);
+      ctx.quadraticCurveTo(x, cy - r * 0.6, x - r * 0.9, cy - r * 0.1);
+      ctx.closePath(); ctx.fill(); ink(ctx, lw);
     }
-    if (hood) {    // mũ áo mưa ôm quanh mặt
-      ctx.strokeStyle = hood; ctx.lineWidth = r * 0.5;
-      ctx.beginPath(); ctx.arc(x, y, r * 1.22, Math.PI * 0.8, Math.PI * 2.2); ctx.stroke();
-    }
+    // mắt to long lanh + má hồng + miệng
+    [-1, 1].forEach((s) => {
+      ctx.fillStyle = '#3a2622'; ctx.beginPath(); ctx.ellipse(x + s * r * 0.38, cy + r * 0.15, r * 0.13, r * 0.18, 0, 0, 7); ctx.fill();
+      dot(ctx, x + s * r * 0.38 - r * 0.04, cy + r * 0.08, r * 0.05, '#fff');
+      ctx.fillStyle = '#ff9fb1aa'; ctx.beginPath(); ctx.ellipse(x + s * r * 0.62, cy + r * 0.45, r * 0.17, r * 0.09, 0, 0, 7); ctx.fill();
+    });
+    ctx.strokeStyle = '#8a4040'; ctx.lineWidth = lw;
+    ctx.beginPath(); ctx.arc(x, cy + r * 0.42, r * 0.13, 0.15 * Math.PI, 0.85 * Math.PI); ctx.stroke();
   }
 
   function bouquet(ctx, x, y, s) {
-    ctx.fillStyle = '#5f9a4a';
-    [[-0.5, -0.6], [0.55, -0.55], [0, -0.9]].forEach(([dx, dy]) => { ctx.beginPath(); ctx.ellipse(x + dx * s, y + dy * s, s * 0.25, s * 0.12, dx, 0, 7); ctx.fill(); });
-    [['#e0233f', -0.3, -0.75], ['#ff8fb1', 0.3, -0.8], ['#fff1f4', 0, -1.05], ['#e0233f', 0.15, -0.5], ['#ff8fb1', -0.2, -0.45]].forEach(([c, dx, dy]) => {
-      ctx.fillStyle = c; ctx.beginPath(); ctx.arc(x + dx * s, y + dy * s, s * 0.24, 0, 7); ctx.fill();
+    const lw = Math.max(1, s * 0.05);
+    ctx.fillStyle = '#6fae5a';
+    [[-0.55, -0.55], [0.6, -0.5], [0, -0.95]].forEach(([dx, dy]) => { ctx.beginPath(); ctx.ellipse(x + dx * s, y + dy * s, s * 0.26, s * 0.13, dx, 0, 7); ctx.fill(); });
+    [['#ff5a78', -0.32, -0.72], ['#ffb3c8', 0.32, -0.78], ['#fff3f6', 0, -1.05], ['#ff5a78', 0.16, -0.48], ['#ffb3c8', -0.2, -0.42]].forEach(([c, dx, dy]) => {
+      dot(ctx, x + dx * s, y + dy * s, s * 0.25, c, lw);
+      dot(ctx, x + dx * s, y + dy * s, s * 0.08, '#ffffffaa');
     });
-    ctx.fillStyle = '#e8d6b0';   // giấy gói
-    ctx.beginPath(); ctx.moveTo(x - s * 0.55, y - s * 0.45); ctx.lineTo(x + s * 0.55, y - s * 0.45); ctx.lineTo(x, y + s * 0.7); ctx.closePath(); ctx.fill();
-    ctx.fillStyle = '#c8143e'; ctx.fillRect(x - s * 0.18, y - s * 0.05, s * 0.36, s * 0.1);
+    ctx.fillStyle = '#f1dfbd'; ctx.beginPath();   // giấy gói
+    ctx.moveTo(x - s * 0.6, y - s * 0.45); ctx.lineTo(x + s * 0.6, y - s * 0.45); ctx.lineTo(x, y + s * 0.75); ctx.closePath(); ctx.fill(); ink(ctx, lw);
+    dot(ctx, x, y + s * 0.02, s * 0.12, '#e0405e', lw);   // nơ
   }
 
-  // người đứng: y = chân, h = chiều cao, o.dir = hướng mặt (1 phải, -1 trái), o.arm = 'down' | 'flowers' | 'hold', o.coat = áo mưa
-  function standing(ctx, x, y, h, who, o = {}) {
-    const L = LOOK[who], r = h * 0.11, hy = y - h + r, sh = hy + r * 1.2, hip = y - h * 0.42, dir = o.dir || 1;
-    const coat = o.coat ? L.coat : null;
-    ctx.save(); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-    ctx.strokeStyle = coat ? '#1c2130' : L.dress ? L.skin : L.pants; ctx.lineWidth = h * 0.06;
-    ln(ctx, x - h * 0.045, hip, x - h * 0.05, y); ln(ctx, x + h * 0.045, hip, x + h * 0.05, y);
-    ctx.fillStyle = '#121212';
-    ctx.beginPath(); ctx.ellipse(x - h * 0.055, y, h * 0.045, h * 0.02, 0, 0, 7); ctx.ellipse(x + h * 0.055, y, h * 0.045, h * 0.02, 0, 0, 7); ctx.fill();
-    if (coat) {          // áo mưa trùm dài
+  // thân trên: áo khoác (anh) / váy (em) / áo mưa; trả về vị trí vai
+  function torso(ctx, x, sh, bottom, h, L, coat, lw) {
+    if (coat) {        // áo mưa trùm, xoè dưới
       ctx.fillStyle = coat; ctx.beginPath();
-      ctx.moveTo(x - h * 0.09, sh - h * 0.01); ctx.lineTo(x + h * 0.09, sh - h * 0.01);
-      ctx.lineTo(x + h * 0.2, y - h * 0.13); ctx.quadraticCurveTo(x, y - h * 0.08, x - h * 0.2, y - h * 0.13);
-      ctx.closePath(); ctx.fill();
-      ctx.strokeStyle = '#ffffff50'; ctx.lineWidth = h * 0.012;
-      ln(ctx, x - h * 0.03, sh + h * 0.06, x - h * 0.08, y - h * 0.16);
-    } else if (L.dress) {
-      ctx.fillStyle = L.shirt; ctx.beginPath();
-      ctx.moveTo(x - h * 0.08, sh); ctx.lineTo(x + h * 0.08, sh); ctx.lineTo(x + h * 0.065, hip - h * 0.05);
-      ctx.lineTo(x + h * 0.16, y - h * 0.2); ctx.lineTo(x - h * 0.16, y - h * 0.2); ctx.lineTo(x - h * 0.065, hip - h * 0.05);
-      ctx.closePath(); ctx.fill();
-    } else {
-      ctx.fillStyle = L.shirt; rrect(ctx, x - h * 0.09, sh, h * 0.18, hip - sh + h * 0.05, h * 0.04);
+      ctx.moveTo(x - h * 0.1, sh);
+      ctx.quadraticCurveTo(x - h * 0.16, bottom - h * 0.1, x - h * 0.21, bottom);
+      ctx.quadraticCurveTo(x, bottom + h * 0.035, x + h * 0.21, bottom);
+      ctx.quadraticCurveTo(x + h * 0.16, bottom - h * 0.1, x + h * 0.1, sh);
+      ctx.closePath(); ctx.fill(); ink(ctx, lw);
+      [0.08, 0.16].forEach((k) => dot(ctx, x, sh + h * k, h * 0.014, L.coat2));
+      ctx.strokeStyle = '#ffffff70'; ctx.lineWidth = h * 0.014;
+      ln(ctx, x - h * 0.05, sh + h * 0.05, x - h * 0.1, bottom - h * 0.04);   // vệt bóng nước
+    } else if (L.dress) {   // váy xoè có cổ trắng + nơ
+      ctx.fillStyle = L.top; ctx.beginPath();
+      ctx.moveTo(x - h * 0.09, sh); ctx.lineTo(x + h * 0.09, sh);
+      ctx.lineTo(x + h * 0.1, sh + h * 0.12);
+      ctx.quadraticCurveTo(x + h * 0.2, bottom - h * 0.02, x + h * 0.19, bottom);
+      for (let k = 4; k >= 0; k--) ctx.quadraticCurveTo(x - h * 0.19 + (k + 0.5) * h * 0.076, bottom + h * 0.03, x - h * 0.19 + k * h * 0.076, bottom);
+      ctx.quadraticCurveTo(x - h * 0.2, bottom - h * 0.02, x - h * 0.1, sh + h * 0.12);
+      ctx.closePath(); ctx.fill(); ink(ctx, lw);
+      ctx.fillStyle = L.top2; ctx.fillRect(x - h * 0.1, sh + h * 0.11, h * 0.2, h * 0.02);   // eo
+      ctx.fillStyle = '#fff'; ctx.beginPath();
+      ctx.ellipse(x - h * 0.035, sh + h * 0.012, h * 0.045, h * 0.025, 0.4, 0, 7);
+      ctx.ellipse(x + h * 0.035, sh + h * 0.012, h * 0.045, h * 0.025, -0.4, 0, 7); ctx.fill(); ink(ctx, lw * 0.8);
+      dot(ctx, x - h * 0.02, sh + h * 0.035, h * 0.018, L.bow); dot(ctx, x + h * 0.02, sh + h * 0.035, h * 0.018, L.bow);
+    } else {           // áo khoác có cổ áo phông trắng
+      ctx.fillStyle = L.top; rrect(ctx, x - h * 0.12, sh, h * 0.24, bottom - sh, h * 0.06); ink(ctx, lw);
+      ctx.fillStyle = '#fff'; ctx.beginPath();
+      ctx.moveTo(x - h * 0.045, sh); ctx.lineTo(x + h * 0.045, sh); ctx.lineTo(x, sh + h * 0.07); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = L.top2; ctx.lineWidth = lw; ln(ctx, x, sh + h * 0.07, x, bottom - h * 0.01);
     }
-    // tay
-    const ay = sh + h * 0.04;
-    ctx.strokeStyle = coat || L.shirt; ctx.lineWidth = h * 0.05;
-    const hand = (hx, hyy) => { ctx.fillStyle = L.skin; ctx.beginPath(); ctx.arc(hx, hyy, h * 0.028, 0, 7); ctx.fill(); };
-    ln(ctx, x - dir * h * 0.085, ay, x - dir * h * 0.11, hip + h * 0.02); hand(x - dir * h * 0.11, hip + h * 0.02);
-    if (o.arm === 'flowers') {
-      ln(ctx, x + dir * h * 0.085, ay, x + dir * h * 0.2, ay + h * 0.12); hand(x + dir * h * 0.2, ay + h * 0.12);
-    } else if (o.arm === 'umbrella') {   // giơ tay cầm cán ô
-      ln(ctx, x + dir * h * 0.085, ay, x + dir * h * 0.13, sh - h * 0.02); hand(x + dir * h * 0.13, sh - h * 0.02);
-    } else if (o.arm === 'hold') {
-      ln(ctx, x + dir * h * 0.085, ay, x + dir * h * 0.17, hip); hand(x + dir * h * 0.17, hip);
-    } else {
-      ln(ctx, x + dir * h * 0.085, ay, x + dir * h * 0.11, hip + h * 0.02); hand(x + dir * h * 0.11, hip + h * 0.02);
+  }
+
+  // người đứng: y = chân, h = chiều cao, o.dir = hướng (1 phải, -1 trái), o.arm = 'down'|'flowers'|'hold'|'umbrella', o.coat = áo mưa
+  // trả về vị trí bàn tay phía trước (để cầm ô)
+  function standing(ctx, x, y, h, who, o = {}) {
+    const L = LOOK[who], dir = o.dir || 1, coat = o.coat ? L.coat : null, lw = Math.max(1, h * 0.011);
+    const chin = y - h * 0.5, sh = chin + h * 0.025, hip = y - h * 0.19, size = h * 0.5;
+    ctx.save();
+    [-1, 1].forEach((s) => {   // chân ngắn + giày tròn
+      ctx.fillStyle = coat ? '#3a3f50' : L.pants;
+      rrect(ctx, x + s * h * 0.055 - h * 0.036, hip - h * 0.03, h * 0.072, h * 0.21, h * 0.034); ink(ctx, lw);
+      ctx.fillStyle = L.shoe; ctx.beginPath(); ctx.ellipse(x + s * h * 0.062, y - h * 0.014, h * 0.052, h * 0.027, 0, 0, 7); ctx.fill(); ink(ctx, lw);
+    });
+    const armC = coat || L.top, aw = h * 0.07;
+    // tay sau
+    limb(ctx, [[x - dir * h * 0.1, sh + h * 0.04], [x - dir * h * 0.14, hip - h * 0.04]], armC, aw, lw);
+    torso(ctx, x, sh, coat ? y - h * 0.1 : L.dress ? y - h * 0.17 : hip + h * 0.02, h, L, coat, lw);
+    dot(ctx, x - dir * h * 0.14, hip - h * 0.04, h * 0.036, L.skin, lw);
+    // tay trước
+    let hand;
+    if (o.arm === 'flowers') hand = [x + dir * h * 0.19, sh + h * 0.12];
+    else if (o.arm === 'umbrella') hand = [x + dir * h * 0.15, sh - h * 0.05];
+    else if (o.arm === 'hold') hand = [x + dir * h * 0.18, hip - h * 0.05];
+    else hand = [x + dir * h * 0.14, hip - h * 0.04];
+    const elbow = [x + dir * h * 0.15, sh + h * 0.08];
+    limb(ctx, o.arm === 'umbrella' ? [[x + dir * h * 0.1, sh + h * 0.04], elbow, hand] : [[x + dir * h * 0.1, sh + h * 0.04], hand], armC, aw, lw);
+    head(ctx, x, chin + h * 0.01, size, who, coat);
+    if (o.arm === 'flowers') bouquet(ctx, hand[0] + dir * h * 0.02, hand[1] - h * 0.01, h * 0.12);
+    dot(ctx, hand[0], hand[1], h * 0.036, L.skin, lw);
+    ctx.restore();
+    return { x: hand[0], y: hand[1] };
+  }
+
+  // mũ bảo hiểm kiểu chibi: tròn bóng, màu pastel, viền trắng, tai mèo (em) / tai gấu (anh) + sticker
+  function helmet(ctx, x, chinY, size, L) {
+    const R = size * 0.5, cy = chinY - size * 0.57, lw = Math.max(1, size * 0.022);
+    const col = L.helmet, dark = L.helmet2;
+    ctx.save(); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    // quai + khoá nhỏ dưới cằm
+    ctx.strokeStyle = dark; ctx.lineWidth = Math.max(1, size * 0.024);
+    ctx.beginPath();   // quai chạy dọc theo má rồi vòng dưới cằm, không chéo qua mặt
+    ctx.moveTo(x - size * 0.37, cy + R * 0.15); ctx.lineTo(x - size * 0.3, chinY - size * 0.1);
+    ctx.quadraticCurveTo(x - size * 0.2, chinY + size * 0.02, x, chinY + size * 0.015);
+    ctx.quadraticCurveTo(x + size * 0.2, chinY + size * 0.02, x + size * 0.3, chinY - size * 0.1);
+    ctx.lineTo(x + size * 0.37, cy + R * 0.15); ctx.stroke();
+    ctx.fillStyle = '#fff'; rrect(ctx, x - size * 0.03, chinY - size * 0.015, size * 0.06, size * 0.04, size * 0.012); ink(ctx, lw * 0.7);
+    // tai (vẽ trước để nằm sau vỏ mũ)
+    [-1, 1].forEach((s) => {
+      const ex = x + s * R * 0.62, ey = cy - R * 0.78;
+      if (L.deco === 'cat') {
+        ctx.fillStyle = col; ctx.beginPath();
+        ctx.moveTo(ex - s * R * 0.3, ey + R * 0.25); ctx.lineTo(ex + s * R * 0.05, ey - R * 0.38); ctx.lineTo(ex + s * R * 0.32, ey + R * 0.12);
+        ctx.closePath(); ctx.fill(); ink(ctx, lw);
+        ctx.fillStyle = '#fff0f5'; ctx.beginPath();
+        ctx.moveTo(ex - s * R * 0.14, ey + R * 0.12); ctx.lineTo(ex + s * R * 0.05, ey - R * 0.2); ctx.lineTo(ex + s * R * 0.18, ey + R * 0.06);
+        ctx.closePath(); ctx.fill();
+      } else {
+        dot(ctx, ex, ey, R * 0.24, col, lw);
+        dot(ctx, ex, ey, R * 0.12, '#eaf4ff');
+      }
+    });
+    // vỏ mũ tròn bóng
+    ctx.fillStyle = col; ctx.beginPath();
+    ctx.arc(x, cy, R, Math.PI * 1.02, Math.PI * 1.98);
+    ctx.quadraticCurveTo(x + R * 1.02, cy + R * 0.2, x + R * 0.92, cy + R * 0.22);
+    ctx.quadraticCurveTo(x, cy + R * 0.08, x - R * 0.92, cy + R * 0.22);
+    ctx.quadraticCurveTo(x - R * 1.02, cy + R * 0.2, x - R, cy);
+    ctx.closePath(); ctx.fill(); ink(ctx, lw);
+    // viền trắng mềm ở mép
+    ctx.strokeStyle = '#ffffff'; ctx.lineWidth = R * 0.13;
+    ctx.beginPath(); ctx.moveTo(x - R * 0.86, cy + R * 0.14); ctx.quadraticCurveTo(x, cy + R * 0.0, x + R * 0.86, cy + R * 0.14); ctx.stroke();
+    // bóng sáng kiểu bong bóng
+    ctx.fillStyle = '#ffffffb0'; ctx.beginPath(); ctx.ellipse(x - R * 0.42, cy - R * 0.55, R * 0.24, R * 0.12, -0.6, 0, 7); ctx.fill();
+    dot(ctx, x - R * 0.12, cy - R * 0.74, R * 0.05, '#ffffffc0');
+    // sticker
+    const sx = x + (L.deco === 'cat' ? -0.5 : 0.45) * R, sy = cy - R * 0.38, k = R * 0.2;   // em ngồi sau: dán bên trái cho khỏi bị che
+    if (L.deco === 'cat') {   // trái tim
+      ctx.fillStyle = '#ff5c86'; ctx.beginPath();
+      ctx.moveTo(sx, sy + k * 0.9);
+      ctx.bezierCurveTo(sx - k * 1.4, sy, sx - k * 0.8, sy - k * 1.1, sx, sy - k * 0.4);
+      ctx.bezierCurveTo(sx + k * 0.8, sy - k * 1.1, sx + k * 1.4, sy, sx, sy + k * 0.9);
+      ctx.fill(); ink(ctx, lw * 0.7);
+      dot(ctx, sx - k * 0.4, sy - k * 0.35, k * 0.18, '#ffffffcc');
+    } else {                  // ngôi sao
+      ctx.fillStyle = '#ffd84d'; ctx.beginPath();
+      for (let i = 0; i < 10; i++) {
+        const a = -Math.PI / 2 + (i * Math.PI) / 5, rr = i % 2 ? k * 0.45 : k;
+        i ? ctx.lineTo(sx + Math.cos(a) * rr, sy + Math.sin(a) * rr) : ctx.moveTo(sx + Math.cos(a) * rr, sy + Math.sin(a) * rr);
+      }
+      ctx.closePath(); ctx.fill(); ink(ctx, lw * 0.7);
     }
-    head(ctx, x, hy, r, who, coat);
-    if (o.arm === 'flowers') bouquet(ctx, x + dir * h * 0.23, ay + h * 0.08, h * 0.1);
     ctx.restore();
   }
 
   // người ngồi xe: hip = điểm ngồi, foot = chỗ để chân, reach = chỗ tay với tới
   function rider(ctx, x, hip, h, who, foot, reach) {
-    const L = LOOK[who], r = h * 0.11, sh = hip - h * 0.3, hy = sh - r * 1.2;
-    ctx.save(); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-    ctx.strokeStyle = L.pants; ctx.lineWidth = h * 0.065;
-    ctx.beginPath(); ctx.moveTo(x, hip); ctx.lineTo(foot[0] - h * 0.02, hip + h * 0.02); ctx.lineTo(foot[0], foot[1]); ctx.stroke();
-    ctx.fillStyle = L.shirt; rrect(ctx, x - h * 0.075, sh, h * 0.15, hip - sh + h * 0.03, h * 0.04);
-    ctx.strokeStyle = L.shirt; ctx.lineWidth = h * 0.05;
-    ctx.beginPath(); ctx.moveTo(x + h * 0.03, sh + h * 0.04); ctx.lineTo((x + reach[0]) / 2 + h * 0.02, sh + h * 0.13); ctx.lineTo(reach[0], reach[1]); ctx.stroke();
-    ctx.fillStyle = L.skin; ctx.beginPath(); ctx.arc(reach[0], reach[1], h * 0.028, 0, 7); ctx.fill();
-    head(ctx, x + h * 0.01, hy, r, who);
+    const L = LOOK[who], lw = Math.max(1, h * 0.011), chin = hip - h * 0.27, sh = chin + h * 0.025;
+    ctx.save();
+    limb(ctx, [[x, hip - h * 0.02], [foot[0] - h * 0.02, hip + h * 0.01], [foot[0], foot[1] - h * 0.02]], L.pants === L.skin ? L.top : L.pants, h * 0.08, lw);
+    ctx.fillStyle = L.shoe; ctx.beginPath(); ctx.ellipse(foot[0] + h * 0.02, foot[1], h * 0.05, h * 0.026, 0, 0, 7); ctx.fill(); ink(ctx, lw);
+    ctx.fillStyle = L.top; rrect(ctx, x - h * 0.11, sh, h * 0.22, hip - sh + h * 0.02, h * 0.06); ink(ctx, lw);
+    if (L.dress) { ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.ellipse(x, sh + h * 0.012, h * 0.06, h * 0.025, 0, 0, 7); ctx.fill(); }
+    else { ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.moveTo(x - h * 0.04, sh); ctx.lineTo(x + h * 0.04, sh); ctx.lineTo(x, sh + h * 0.06); ctx.closePath(); ctx.fill(); }
+    limb(ctx, [[x + h * 0.05, sh + h * 0.05], [(x + reach[0]) / 2, sh + h * 0.12], reach], L.top, h * 0.07, lw);
+    dot(ctx, reach[0], reach[1], h * 0.034, L.skin, lw);
+    head(ctx, x, chin + h * 0.01, h * 0.5, who);
+    helmet(ctx, x, chin + h * 0.01, h * 0.5, L);   // đi xe phải đội mũ bảo hiểm
     ctx.restore();
   }
 
@@ -210,7 +321,7 @@ window.NightScene = (() => {
     ctx.fillStyle = '#2a2b31'; ctx.fillRect(x - Lb * 0.05, wy - rw * 0.95, Lb * 0.28, rw * 0.3);
     ctx.fillStyle = '#ff3b3b'; ctx.beginPath(); ctx.arc(x - Lb * 0.44, wy - rw * 1.45, rw * 0.13, 0, 7); ctx.fill();
     // người ngồi: em sau, anh trước
-    const hR = Lb * 0.95;
+    const hR = Lb * 0.78;
     rider(ctx, x - Lb * 0.27, seatY, hR * 0.95, 'em', [x - Lb * 0.12, wy - rw * 0.95], [x - Lb * 0.05, seatY - hR * 0.13]);
     rider(ctx, x - Lb * 0.03, seatY, hR, 'anh', [x + Lb * 0.16, wy - rw * 0.95], [x + Lb * 0.21, wy - rw * 3.15]);
     // yếm trước + phuộc + tay lái + đèn
@@ -393,14 +504,13 @@ window.NightScene = (() => {
       const ph = H * 0.3, p1 = lx + W * 0.06, feet = H * 0.89;
       const lit = `brightness(${0.8 + flash * 0.6})`;
       ctx.filter = lit;
-      standing(ctx, p1, feet, ph, 'anh', { dir: 1, arm: 'umbrella', coat: true });
-      standing(ctx, p1 + ph * 0.34, feet, ph * 0.93, 'em', { dir: -1, arm: 'hold', coat: true });
+      const handA = standing(ctx, p1, feet, ph, 'anh', { dir: 1, arm: 'umbrella', coat: true });
+      standing(ctx, p1 + ph * 0.4, feet, ph * 0.93, 'em', { dir: -1, arm: 'hold', coat: true });
       ctx.filter = 'none';
       glowAt(ctx, lx + W * 0.06, H * 0.6, W * 0.12, '#ffd49a', 0.12);
       // vị trí ô: tay anh -> tán ô nghiêng sang em
-      const shA = feet - ph + ph * 0.11 * 2.2;
-      const handX = p1 + ph * 0.13, handY = shA - ph * 0.02;
-      const ux = p1 + ph * 0.24, uy = feet - ph * 1.03, ur = ph * 0.33, tilt = 0.18;
+      const handX = handA.x, handY = handA.y;
+      const ux = p1 + ph * 0.26, uy = feet - ph * 1.08, ur = ph * 0.38, tilt = 0.16;
       // mưa xiên
       ctx.strokeStyle = '#a9bddb'; ctx.lineWidth = Math.max(1, W / 900);
       for (let i = 0; i < 260; i++) {
