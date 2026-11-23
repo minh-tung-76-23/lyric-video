@@ -82,7 +82,17 @@
     const next = (k) => {
       if (k >= tries.length) { item.missing = true; return; }
       const img = new Image();
-      img.onload = () => { item.el.style.backgroundImage = `url("${tries[k]}")`; };
+      img.onload = () => {
+        item.el.style.backgroundImage = `url("${tries[k]}")`;
+        // ảnh PNG nền trong suốt -> đè lên nền động (nền vẫn chạy phía sau)
+        try {
+          const c = document.createElement('canvas'); c.width = c.height = 16;
+          const x = c.getContext('2d'); x.drawImage(img, 0, 0, 16, 16);
+          const a = (px, py) => x.getImageData(px, py, 1, 1).data[3];
+          item.overlay = a(0, 0) < 10 && a(15, 0) < 10 && a(0, 15) < 10 && a(15, 15) < 10;
+        } catch { item.overlay = false; }
+        item.el.classList.toggle('overlay', item.overlay);
+      };
       img.onerror = () => next(k + 1);
       img.src = tries[k];
     };
@@ -202,7 +212,7 @@
     if (!scene) return;
     const c = clips[curClip];
     // đang là ảnh/clip có file -> tắt canvas cho nhẹ máy
-    const useCanvas = !c || c.scene || c.missing;
+    const useCanvas = !c || c.scene || c.missing || c.overlay;   // ảnh trong suốt: canvas vẫn vẽ phía sau
     bgEl.style.visibility = useCanvas ? 'visible' : 'hidden';
     if (!useCanvas) return;
     if (c?.scene) return scene.draw(t, c.scene, t - c.at, c.len);

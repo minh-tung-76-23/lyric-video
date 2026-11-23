@@ -55,6 +55,11 @@ body { display: flex; align-items: center; justify-content: center; }
 }
 /* ảnh tĩnh: tối bớt cho chữ dễ đọc + phóng to chậm cho có chuyển động */
 .clip.img { filter: brightness(.68) contrast(1.08) saturate(.8) sepia(.12); }
+/* ảnh PNG nền trong suốt: đè lên nền động, giữ màu tươi, không cắt mất hình */
+.clip.img.overlay {
+  filter: drop-shadow(0 4px 10px #0008) brightness(.95);
+  background-size: contain; background-position: center bottom; background-repeat: no-repeat;
+}
 .clip.img.on { animation: kenburns 9s ease-out forwards; }
 @keyframes kenburns {
   from { transform: scale(1) translate(0, 0); }

@@ -101,6 +101,9 @@ Ví dụ `index.html?t=27` là đoạn bốn mùa, `index.html?t=41` là đoạn
 | – | 🎬 hoạt hình `storm` | dù cho lắm bão giông kéo đến | 40.35 |
 | 25 | `25-em-oi.jpg` | **Em ơi!** (kết bài) | 42.95 |
 
+**Ảnh PNG nền trong suốt** (chỉ có nhân vật, không có nền) sẽ tự **đè lên nền động** của web,
+nền phía sau vẫn chạy. Không cần khai báo gì thêm, trang tự nhận ra ảnh trong suốt.
+
 Mỗi ảnh hiện từ giây của nó tới khi ảnh kế tiếp bắt đầu. Ảnh có ghi *(ảnh nền)* là ảnh đứng lâu hơn, làm nền cho cả cụm chữ.
 
 Có cả clip `.mp4` thay cho ảnh: ghi `clips/ten-clip.mp4` vào danh sách giống như ảnh (xem mục 5).
